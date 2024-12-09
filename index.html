@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Slurm SBATCH Script Generator</title>
+    
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -158,11 +159,11 @@
             </details>
 
 
-            <button type="button" onclick="downloadConfig()" style="background: none; cursor: pointer; color: black;"></button>
-                Download config 💾
+            <button type="button" onclick="downloadConfig()" style="background: none; cursor: pointer; color: black;">Download config 💾
+            </button>
             </button>
             <div style="margin-top: 20px;">
-                <label for="fileInput">Upload Config File:</label>
+                <label for="fileInput"></label>
                 <input type="file" id="fileInput" accept=".yaml" onchange="handleFileSelect(event)" style="display: none;">
                 <div id="dropZone" style="border: 2px dashed #ccc; padding: 20px; text-align: center; cursor: pointer;">
                     Drag and drop a file here or click to upload
@@ -193,7 +194,8 @@
                     }
                 });
             </script>
-
+            
+            hit enter to generate
             <button type="button" onclick="generateScript()">Generate Script</button>
             <script>
                 document.addEventListener('keydown', function(event) {
