@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Slurm SBATCH Script Generator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 600px;
+        }
+        h1, h2 {
+            text-align: center;
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+        }
+        label {
+            margin-bottom: 5px;
+        }
+        input[type="text"], input[type="number"], input[type="radio"] {
+            margin-bottom: 15px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            width: 100%;
+        }
+        button {
+            padding: 10px;
+            background-color: #007BFF;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        details {
+            margin-bottom: 15px;
+        }
+        pre {
+            background-color: #f4f4f4;
+            padding: 10px;
+            border-radius: 5px;
+            white-space: pre-wrap;
+            position: relative;
+        }
+        .copy-button {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            padding: 5px 10px;
+            background-color: #007BFF;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .copy-button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<script>
+    document.addEventListener('DOMContentLoaded', (event) => {
+        const formElements = document.getElementById('slurmForm').elements;
+        for (let element of formElements) {
+            if (element.type !== 'button' && localStorage.getItem(element.name)) {
+                element.value = localStorage.getItem(element.name);
+            }
+        }
+    });
+
+
+    document.getElementById('slurmForm').addEventListener('input', (event) => {
+        localStorage.setItem(event.target.name, event.target.value);
+    });
+</script>
+<body>
+    <div class="container">
+        <h1>Slurm SBATCH Script Generator</h1>
+        <style>
+            input[type="text"], input[type="number"], input[type="radio"], select {
+            width: calc(100% - 22px); /* Adjust width to fit padding and border */
+            }
+        </style>
+        <form id="slurmForm">
+            <div style="display: flex; justify-content: space-between;">
+                <div style="flex: 1; margin-right: 10px;">
+                    <label for="jobName">Job Name:</label>
+                    <input type="text" id="jobName" name="jobName" value="defaultJob" required>
+                </div>
+                <div style="flex: 1; margin-left: 10px;">
+                    <label for="outputPath">Output Path:</label>
+                    <input type="text" id="outputPath" name="outputPath" value="." required>
+                </div>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+                <div style="flex: 1; margin-right: 10px;">
+                    <label for="numGpus">Number of GPUs:</label>
+                    <input type="number" id="numGpus" name="numGpus" value="1" required>
+                </div>
+                <div style="flex: 1; margin-left: 10px;">
+                    <label for="partition">Partition:</label>
+                    <input type="text" id="partition" name="partition" value="3090" required>
+                </div>
+            </div>
+
+            <label for="yourCommand">Your Command:</label>
+            <input type="text" id="yourCommand" name="yourCommand" value="echo 'Hello World 🌵'" required>
+
+            Advanced Options:
+
+           
+
+            <details>
+                <summary>slurm</summary>
+                <label for="cpusPerTask">CPUs per Task:</label>
+                <input type="text" id="cpusPerTask" name="cpusPerTask" value="16" required>
+            </details>
+
+     
+
+            <details>
+                <summary>ntfy.sh</summary>
+                <div style="margin-left: 20px;">
+                    <br>
+                    <label for="includeCurl">Include ntfy.sh alert:</label>
+                    <select id="includeCurl" name="includeCurl" onchange="toggleUserNameField()">
+                        <option value="yes">Yes</option>
+                        <option value="no" selected>No</option>
+                    </select>
+                    <div id="userNameField">
+                        <br>
+                        <label for="userName">Your ntfy address: </label>
+                        <br>
+                        <input type="text" id="userName" name="userName" value="defaultUser">
+                    </div>
+
+                    <label for="customMessage">Custom ntfy message:</label>
+                    <input type="text" id="customMessage" name="customMessage" value="Job finished 😀">
+                </div>
+            </details>
+
+
+            <button type="button" onclick="downloadConfig()" style="background: none; cursor: pointer; color: black;"></button>
+                Download config 💾
+            </button>
+            <div style="margin-top: 20px;">
+                <label for="fileInput">Upload Config File:</label>
+                <input type="file" id="fileInput" accept=".yaml" onchange="handleFileSelect(event)" style="display: none;">
+                <div id="dropZone" style="border: 2px dashed #ccc; padding: 20px; text-align: center; cursor: pointer;">
+                    Drag and drop a file here or click to upload
+                </div>
+            </div>
+            <script>
+                const dropZone = document.getElementById('dropZone');
+                const fileInput = document.getElementById('fileInput');
+
+                dropZone.addEventListener('click', () => fileInput.click());
+
+                dropZone.addEventListener('dragover', (event) => {
+                    event.preventDefault();
+                    dropZone.style.borderColor = '#007BFF';
+                });
+
+                dropZone.addEventListener('dragleave', () => {
+                    dropZone.style.borderColor = '#ccc';
+                });
+
+                dropZone.addEventListener('drop', (event) => {
+                    event.preventDefault();
+                    dropZone.style.borderColor = '#ccc';
+                    const files = event.dataTransfer.files;
+                    if (files.length > 0) {
+                        fileInput.files = files;
+                        handleFileSelect({ target: fileInput });
+                    }
+                });
+            </script>
+
+            <button type="button" onclick="generateScript()">Generate Script</button>
+            <script>
+                document.addEventListener('keydown', function(event) {
+                    if (event.key === 'Enter') {
+                        generateScript();
+                    }
+                });
+            </script>
+
+            
+
+
+        </form>
+
+
+        <h2>SBATCH Script</h2>
+        <pre id="scriptOutput"></pre>
+    </div>
+
+    <script>
+        function generateScript() {
+            const jobName = document.getElementById('jobName').value;
+            const outputPath = document.getElementById('outputPath').value;
+            const numGpus = document.getElementById('numGpus').value;
+            const partition = document.getElementById('partition').value;
+            const userName = document.getElementById('userName').value;
+            const includeCurl = document.getElementById('includeCurl').value;
+            const cpusPerTask = document.getElementById('cpusPerTask').value;
+            const yourCommand = document.getElementById('yourCommand').value;
+
+            const customMessage = document.getElementById('customMessage').value;
+            let partitionLine = `#SBATCH -p ${partition} # queue name or partition name`;
+            if (partition === '4A100') {
+                partitionLine += `\n#SBATCH -q 4A100`;
+            }
+
+            let script = `
+#!/bin/bash
+#SBATCH -J ${jobName} # job name
+#SBATCH -o ${outputPath}/output_${jobName}.%j.out 
+${partitionLine}
+#SBATCH -t 72:00:00 # Run time (hh:mm:ss)
+#SBATCH --gres=gpu:${numGpus}
+#SBATCH --nodes=1
+#SBATCH --ntasks=1
+#SBATCH --tasks-per-node=1
+#SBATCH --cpus-per-task=${cpusPerTask}
+
+# Your commands go here
+
+${yourCommand}`;
+
+
+            if (includeCurl === 'yes') {
+                script += `
+
+curl  -d "${customMessage}" ntfy.sh/${userName}`;
+            }
+
+            document.getElementById('scriptOutput').textContent = script;
+            document.getElementById('scriptOutput').innerHTML = `<code style="background-color: #f4f4f4; padding: 10px; border-radius: 5px; display: block; white-space: pre-wrap; position: relative;">
+                <button class="copy-button" onclick="copyToClipboard()">Copy</button>
+                ${script}
+            </code>`;
+
+            function copyToClipboard() {
+                const scriptText = document.getElementById('scriptOutput').innerText;
+                navigator.clipboard.writeText(scriptText).then(() => {
+                    alert('Script copied to clipboard!');
+                }).catch(err => {
+                    console.error('Failed to copy: ', err);
+                });
+            }
+        }
+    </script>
+
+</body>
+</html>
+
+<script>
+    function downloadConfig() {
+        const config = {
+            jobName: document.getElementById('jobName').value,
+            outputPath: document.getElementById('outputPath').value,
+            numGpus: document.getElementById('numGpus').value,
+            partition: document.getElementById('partition').value,
+            userName: document.getElementById('userName').value,
+            includeCurl: document.getElementById('includeCurl').value,
+            cpusPerTask: document.getElementById('cpusPerTask').value,
+            yourCommand: document.getElementById('yourCommand').value,
+            customMessage: document.getElementById('customMessage').value
+        };
+
+        const yaml = `
+jobName: ${config.jobName}
+outputPath: ${config.outputPath}
+numGpus: ${config.numGpus}
+partition: ${config.partition}
+userName: ${config.userName}
+includeCurl: ${config.includeCurl}
+cpusPerTask: ${config.cpusPerTask}
+yourCommand: ${config.yourCommand}
+customMessage: ${config.customMessage}
+        `;
+
+        const blob = new Blob([yaml], { type: 'text/yaml' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'config.yaml';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    }
+</script>
+<script>
+    function handleFileSelect(event) {
+        const file = event.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const contents = e.target.result;
+                const config = parseYAML(contents);
+                if (config) {
+                    document.getElementById('jobName').value = config.jobName || '';
+                    document.getElementById('outputPath').value = config.outputPath || '';
+                    document.getElementById('numGpus').value = config.numGpus || '';
+                    document.getElementById('partition').value = config.partition || '';
+                    document.getElementById('userName').value = config.userName || '';
+                    document.getElementById('includeCurl').value = config.includeCurl || 'no';
+                    document.getElementById('cpusPerTask').value = config.cpusPerTask || '';
+                    document.getElementById('yourCommand').value = config.yourCommand || '';
+                    document.getElementById('customMessage').value = config.customMessage || '';
+                }
+            };
+            reader.readAsText(file);
+        }
+    }
+
+    function parseYAML(yaml) {
+        const lines = yaml.split('\n');
+        const config = {};
+        lines.forEach(line => {
+            const [key, value] = line.split(':').map(part => part.trim());
+            if (key && value) {
+                config[key] = value;
+            }
+        });
+        return config;
+    }
+</script>
+
