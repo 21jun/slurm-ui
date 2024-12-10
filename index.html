@@ -77,22 +77,15 @@
         }
     </style>
 </head>
-<script>
-    document.addEventListener('DOMContentLoaded', (event) => {
-        const formElements = document.getElementById('slurmForm').elements;
-        for (let element of formElements) {
-            if (element.type !== 'button' && localStorage.getItem(element.name)) {
-                element.value = localStorage.getItem(element.name);
-            }
-        }
-    });
 
-
-    document.getElementById('slurmForm').addEventListener('input', (event) => {
-        localStorage.setItem(event.target.name, event.target.value);
-    });
-</script>
 <body>
+    <div style="position: absolute; top: 10px; right: 10px;">
+        Report bugs or contribute on GitHub:
+        <button onclick="window.location.href='https://github.com/21jun/slurm-ui'" style="background: none; border: none; cursor: pointer;">
+            <img src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png" alt="GitHub" style="width: 24px; height: 24px;">
+        </button>
+    </div>
+
     <div class="container">
         <h1>Slurm SBATCH Script Generator</h1>
         <style>
@@ -127,15 +120,11 @@
 
             Advanced Options:
 
-           
-
             <details>
                 <summary>slurm</summary>
                 <label for="cpusPerTask">CPUs per Task:</label>
                 <input type="text" id="cpusPerTask" name="cpusPerTask" value="16" required>
             </details>
-
-     
 
             <details>
                 <summary>ntfy.sh</summary>
@@ -158,10 +147,7 @@
                 </div>
             </details>
 
-
-            <button type="button" onclick="downloadConfig()" style="background: none; cursor: pointer; color: black;">Download config 💾
-            </button>
-            </button>
+            <button type="button" onclick="downloadConfig()" style="background: none; cursor: pointer; color: black;">Download config 💾</button>
             <div style="margin-top: 20px;">
                 <label for="fileInput"></label>
                 <input type="file" id="fileInput" accept=".yaml" onchange="handleFileSelect(event)" style="display: none;">
@@ -204,12 +190,7 @@
                     }
                 });
             </script>
-
-            
-
-
         </form>
-
 
         <h2>SBATCH Script</h2>
         <pre id="scriptOutput"></pre>
@@ -225,8 +206,8 @@
             const includeCurl = document.getElementById('includeCurl').value;
             const cpusPerTask = document.getElementById('cpusPerTask').value;
             const yourCommand = document.getElementById('yourCommand').value;
-
             const customMessage = document.getElementById('customMessage').value;
+
             let partitionLine = `#SBATCH -p ${partition} # queue name or partition name`;
             if (partition === '4A100') {
                 partitionLine += `\n#SBATCH -q 4A100`;
@@ -247,7 +228,6 @@ ${partitionLine}
 # Your commands go here
 
 ${yourCommand}`;
-
 
             if (includeCurl === 'yes') {
                 script += `
@@ -270,26 +250,25 @@ curl  -d "${customMessage}" ntfy.sh/${userName}`;
                 });
             }
         }
+
+        document.getElementById('slurmForm').addEventListener('input', generateScript);
     </script>
 
-</body>
-</html>
+    <script>
+        function downloadConfig() {
+            const config = {
+                jobName: document.getElementById('jobName').value,
+                outputPath: document.getElementById('outputPath').value,
+                numGpus: document.getElementById('numGpus').value,
+                partition: document.getElementById('partition').value,
+                userName: document.getElementById('userName').value,
+                includeCurl: document.getElementById('includeCurl').value,
+                cpusPerTask: document.getElementById('cpusPerTask').value,
+                yourCommand: document.getElementById('yourCommand').value,
+                customMessage: document.getElementById('customMessage').value
+            };
 
-<script>
-    function downloadConfig() {
-        const config = {
-            jobName: document.getElementById('jobName').value,
-            outputPath: document.getElementById('outputPath').value,
-            numGpus: document.getElementById('numGpus').value,
-            partition: document.getElementById('partition').value,
-            userName: document.getElementById('userName').value,
-            includeCurl: document.getElementById('includeCurl').value,
-            cpusPerTask: document.getElementById('cpusPerTask').value,
-            yourCommand: document.getElementById('yourCommand').value,
-            customMessage: document.getElementById('customMessage').value
-        };
-
-        const yaml = `
+            const yaml = `
 jobName: ${config.jobName}
 outputPath: ${config.outputPath}
 numGpus: ${config.numGpus}
@@ -299,52 +278,52 @@ includeCurl: ${config.includeCurl}
 cpusPerTask: ${config.cpusPerTask}
 yourCommand: ${config.yourCommand}
 customMessage: ${config.customMessage}
-        `;
+            `;
 
-        const blob = new Blob([yaml], { type: 'text/yaml' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'config.yaml';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-    }
-</script>
-<script>
-    function handleFileSelect(event) {
-        const file = event.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const contents = e.target.result;
-                const config = parseYAML(contents);
-                if (config) {
-                    document.getElementById('jobName').value = config.jobName || '';
-                    document.getElementById('outputPath').value = config.outputPath || '';
-                    document.getElementById('numGpus').value = config.numGpus || '';
-                    document.getElementById('partition').value = config.partition || '';
-                    document.getElementById('userName').value = config.userName || '';
-                    document.getElementById('includeCurl').value = config.includeCurl || 'no';
-                    document.getElementById('cpusPerTask').value = config.cpusPerTask || '';
-                    document.getElementById('yourCommand').value = config.yourCommand || '';
-                    document.getElementById('customMessage').value = config.customMessage || '';
-                }
-            };
-            reader.readAsText(file);
+            const blob = new Blob([yaml], { type: 'text/yaml' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'config.yaml';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
         }
-    }
 
-    function parseYAML(yaml) {
-        const lines = yaml.split('\n');
-        const config = {};
-        lines.forEach(line => {
-            const [key, value] = line.split(':').map(part => part.trim());
-            if (key && value) {
-                config[key] = value;
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const contents = e.target.result;
+                    const config = parseYAML(contents);
+                    if (config) {
+                        document.getElementById('jobName').value = config.jobName || '';
+                        document.getElementById('outputPath').value = config.outputPath || '';
+                        document.getElementById('numGpus').value = config.numGpus || '';
+                        document.getElementById('partition').value = config.partition || '';
+                        document.getElementById('userName').value = config.userName || '';
+                        document.getElementById('includeCurl').value = config.includeCurl || 'no';
+                        document.getElementById('cpusPerTask').value = config.cpusPerTask || '';
+                        document.getElementById('yourCommand').value = config.yourCommand || '';
+                        document.getElementById('customMessage').value = config.customMessage || '';
+                    }
+                };
+                reader.readAsText(file);
             }
-        });
-        return config;
-    }
-</script>
+        }
 
+        function parseYAML(yaml) {
+            const lines = yaml.split('\n');
+            const config = {};
+            lines.forEach(line => {
+                const [key, value] = line.split(':').map(part => part.trim());
+                if (key && value) {
+                    config[key] = value;
+                }
+            });
+            return config;
+        }
+    </script>
+</body>
+</html>
