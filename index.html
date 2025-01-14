@@ -230,6 +230,8 @@ ${partitionLine}
 #SBATCH --tasks-per-node=1
 #SBATCH --cpus-per-task=${cpusPerTask}
 
+# Check the Node name
+hostname
 # Your commands go here
 
 ${yourCommand}`;
